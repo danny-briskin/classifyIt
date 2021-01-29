@@ -8,8 +8,9 @@ Feature: Images validation
   Scenario Outline: Classification of images on QAC website
     Given I load webdriver
     Given I open "<PAGE>"
-    When I find all images on the page
-    #Then I close webdriver
+    #When I find all images on the page
+    And I grab all text from the page
+    Then I close webdriver
 
     Examples:
       | PAGE           |
@@ -21,5 +22,5 @@ Feature: Images validation
   |                solutions-and-services/test-automation/|
 
 
-    Scenario: Teardown
-        Given I close webdriver
+#    Scenario: Teardown
+#        Given I close webdriver

@@ -1,6 +1,9 @@
-from behave import *
+import os
 
-from pageobject import *
+from behave import *
+from selenium import webdriver
+
+from com.qaconsultants.classifyit.pageobjects.pageobject import PageObject
 
 global page_object
 
@@ -14,14 +17,25 @@ def step_impl(context, url):
 @given('I load webdriver')
 def step_impl(context):
     global page_object
-    page_object = PageObject(
-        webdriver.Firefox(executable_path='/home/dbriskin/WORK/geckodriver/geckodriver'))
+    # driver = getattr(webdriver, driver_name)
+    driver = webdriver.Firefox(service_log_path=os.path.devnull,
+                               executable_path='/home/dbriskin/WORK/geckodriver/geckodriver')
+    # driver.implicitly_wait(5)
+    driver.set_window_size(1200, 800)
+
+    page_object = PageObject(driver)
 
 
 @when('I find all images on the page')
 def step_impl(context):
     global page_object
     page_object.find_all_images()
+
+
+@step('I grab all text from the page')
+def step_impl(context):
+    global page_object
+    page_object.find_all_text()
 
 
 @step('I close webdriver')

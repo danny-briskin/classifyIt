@@ -1,6 +1,8 @@
 import logging
+import os
 import shutil
 import socket
+import requests
 
 import http.client
 
@@ -12,8 +14,12 @@ from selenium.webdriver.remote.command import Command
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from com.qaconsultants.classifyit.utils.html_utilities import *
+
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+# project homedir
+BASE_DIR = os.path.dirname(os.getcwd())
 
 
 class PageObject:
@@ -55,41 +61,42 @@ class PageObject:
 
     def find_all_images(self):
         all_images = self.driver.find_elements_by_xpath(
-            "//img[not(contains(@style,'display: none')) and not(contains(@style,'displayed:false'))]")
+            "//img[not(contains(@style,'display: none')) and not(contains(@style,"
+            "'displayed:false'))]")
         # + ((this.isHeaderChecked) ? " or contains(@class,'header-bar')" : "")        # + ((
         # this.isFooterChecked) ? " or contains(@class,'footer-sidebar')" : "")
-        xpathToNotInclude = "./ancestor-or-self::*[@aria-hidden='true'" + " or contains(@data-src,'youtube.com')" + " or contains(@class,'rpc-post-image')" + " or contains(@class,'qac-img-wrap')" + " or contains(@class,'testimonials-rotator')" + " or contains(@class,'flip-card-pic')" + " or contains(@data-animation,'zoom')" + "]";
+        xpath_to_not_include = "./ancestor-or-self::*[@aria-hidden='true' or contains(@data-src," \
+                               "'youtube.com') or contains(@class,'rpc-post-image') or contains(" \
+                               "@class,'qac-img-wrap') or contains(@class,'testimonials-rotator') " \
+                               "or contains(@class,'flip-card-pic') or contains(@data-animation," \
+                               "'zoom')] "
 
         for image in all_images:
             try:
-                image.find_element_by_xpath(xpathToNotInclude)
+                # logging.info('Trying with '+ image.get_attribute("src"))
+
+                image.find_element_by_xpath(xpath_to_not_include)
                 all_images.remove(image)
             except NoSuchElementException:
                 pass
-        for image in all_images:
-            res = self.getImageUrlFromAttributes(image)
-            logging.info(res)
+        # TODO all!!
+        for image in all_images[:2]:
+            image_url = get_image_url_from_attributes(image)
+            first_pos = image_url.rfind("/")
+            last_pos = len(image_url)
+            image_file_name = image_url[first_pos + 1:last_pos]
+            logging.info('Processing [' + image_url + ']')
+            request = requests.get(image_url, allow_redirects=True)
+            open(BASE_DIR + '/tmpImagesFolder/' + image_file_name,
+                 'wb').write(request.content)
 
-    def getImageUrlFromAttributes(self, image):
-        srcUrl = ""
-        # try with srcset attribute for 1x or first available
-        # TODO consider sorting by width desc
-        srcset = image.get_attribute("srcset")
-        if srcset != "":
-            srcsetArr = srcset.split(",")
-            if not srcsetArr:
-                srcCandidate = srcsetArr[0].split(" ")[0]
-                # srcUrl = Arrays.stream(srcsetArr)
-                #         .filter(src -> src.contains(" 1x"))
-                #         .map(src -> src.split(" ")[0])
-                #         .findFirst()
-                #         .orElse(srcCandidate);
-                srcUrl = srcCandidate
-        # if not found, let's try with regular src
-        if srcUrl == "" or not srcUrl.startswith('http'):
-            srcUrl = image.get_attribute("src")
-
-        # the last chance - try with data-lazy-srcUrl (comes from WPRocket optimization)
-        if srcUrl == "" or not srcUrl.startswith('http'):
-            srcUrl = image.get_attribute("data-lazy-src")
-        return srcUrl
+    def find_all_text(self):
+        text_results = set()
+        # TODO consider remove img tags from the search
+        all_texts = self.driver.find_elements_by_xpath(
+            "//div[contains(@class,'entry-content')]/descendant::*[not(contains(@style,'display: none')) and not(contains(@style,'displayed:false'))]")
+        for text_item in all_texts:
+            if text_item.text != "":
+                text_results.add(text_item.text)
+        text_results_string = ' '.join(text_results)
+        logging.info(text_results_string)
