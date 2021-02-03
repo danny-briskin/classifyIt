@@ -9,8 +9,8 @@ from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from tqdm import tqdm
 
-from model import build_model
-from simple_tokenizer import SimpleTokenizer as _Tokenizer
+#from model import build_model
+from .simple_tokenizer import SimpleTokenizer as _Tokenizer
 
 __all__ = ["available_models", "load", "tokenize"]
 _tokenizer = _Tokenizer()
@@ -137,3 +137,7 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77):
         result[i, :len(tokens)] = torch.tensor(tokens)
 
     return result
+
+def tokenize_attempt(text):
+    all_tokens = _tokenizer.encode(text)
+    return len(all_tokens)

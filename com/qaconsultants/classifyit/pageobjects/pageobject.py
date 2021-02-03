@@ -14,6 +14,7 @@ from selenium.webdriver.remote.command import Command
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from com.qaconsultants.classifyit.clip_processing.clip_image_text_processing import *
 from com.qaconsultants.classifyit.utils.html_utilities import *
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -100,3 +101,14 @@ class PageObject:
                 text_results.add(text_item.text)
         text_results_string = ' '.join(text_results)
         logging.info(text_results_string)
+
+    def run_classification(self):
+        load_model()
+        image_path = "../tmpImagesFolder/TEST-AUTOMATION.webp"
+        load_image(image_path)
+        initial_categories_list = ['Test Automation', 'We are a Test Automation Leader',
+                                   'What happens when test automation goes wrong?'
+            ,
+                                   'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
+        load_categories(initial_categories_list)
+        process_probabilities(initial_categories_list)

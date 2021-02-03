@@ -38,6 +38,12 @@ def step_impl(context):
     page_object.find_all_text()
 
 
+@step('I run classification')
+def step_impl(context):
+    global page_object
+    page_object.run_classification()
+
+
 @step('I close webdriver')
 def step_impl(context):
     global page_object
