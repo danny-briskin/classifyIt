@@ -7,11 +7,11 @@ Feature: Images validation
 
   Scenario Outline: Classification of images on QAC website
     Given I load webdriver
-    #Given I open "<PAGE>"
-    #When I find all images on the page
+    Given I open "<PAGE>"
+    When I find all images on the page
     #And I grab all text from the page
-    Then I run classification
-    #Then I close webdriver
+    #Then I run classification
+    Then I close webdriver
 
     Examples:
       | PAGE           |

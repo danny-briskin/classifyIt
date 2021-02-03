@@ -15,12 +15,26 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from com.qaconsultants.classifyit.clip_processing.clip_image_text_processing import *
+from com.qaconsultants.classifyit.utils.file_utilities import clean_folder, find_images_in_folder
 from com.qaconsultants.classifyit.utils.html_utilities import *
+from com.qaconsultants.classifyit.utils.images_utilities import convert_svg_to_png
 
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 # project homedir
 BASE_DIR = os.path.dirname(os.getcwd())
+
+
+def run_classification():
+    load_model()
+    image_path = "../tmpImagesFolder/TEST-AUTOMATION.webp"
+    load_image(image_path)
+    initial_categories_list = ['Test Automation', 'We are a Test Automation Leader',
+                               'What happens when test automation goes wrong?'
+        ,
+                               'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
+    load_categories(initial_categories_list)
+    process_probabilities(initial_categories_list)
 
 
 class PageObject:
@@ -72,24 +86,43 @@ class PageObject:
                                "or contains(@class,'flip-card-pic') or contains(@data-animation," \
                                "'zoom')] "
 
-        for image in all_images:
+        for image_element in all_images:
             try:
                 # logging.info('Trying with '+ image.get_attribute("src"))
 
-                image.find_element_by_xpath(xpath_to_not_include)
-                all_images.remove(image)
+                image_element.find_element_by_xpath(xpath_to_not_include)
+                all_images.remove(image_element)
             except NoSuchElementException:
                 pass
+        clean_folder(BASE_DIR + '/tmpImagesFolder/')
         # TODO all!!
-        for image in all_images[:2]:
-            image_url = get_image_url_from_attributes(image)
+        for image_element in all_images[:2]:
+            image_url = get_image_url_from_attributes(image_element)
             first_pos = image_url.rfind("/")
             last_pos = len(image_url)
             image_file_name = image_url[first_pos + 1:last_pos]
             logging.info('Processing [' + image_url + ']')
             request = requests.get(image_url, allow_redirects=True)
-            open(BASE_DIR + '/tmpImagesFolder/' + image_file_name,
-                 'wb').write(request.content)
+            image_file_name_full = BASE_DIR + '/tmpImagesFolder/' + image_file_name
+            open(image_file_name_full, 'wb').write(request.content)
+            if image_url.endswith('.svg'):
+                convert_svg_to_png(image_file_name, BASE_DIR + '/tmpImagesFolder/')
+
+        # find all downloaded images
+        list_of_images = find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.webp')
+        list_of_images.extend(find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.png'))
+        logging.info('Start to classify...')
+        load_model()
+        for file_image in list_of_images:
+            file_image_str = str(file_image)
+            logging.info(' Classification : ' + file_image_str)
+            load_image(file_image_str)
+            initial_categories_list = ['Test Automation', 'We are a Test Automation Leader',
+                                       'What happens when test automation goes wrong?'
+                ,
+                                       'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
+            load_categories(initial_categories_list)
+            process_probabilities(initial_categories_list)
 
     def find_all_text(self):
         text_results = set()
@@ -101,14 +134,3 @@ class PageObject:
                 text_results.add(text_item.text)
         text_results_string = ' '.join(text_results)
         logging.info(text_results_string)
-
-    def run_classification(self):
-        load_model()
-        image_path = "../tmpImagesFolder/TEST-AUTOMATION.webp"
-        load_image(image_path)
-        initial_categories_list = ['Test Automation', 'We are a Test Automation Leader',
-                                   'What happens when test automation goes wrong?'
-            ,
-                                   'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
-        load_categories(initial_categories_list)
-        process_probabilities(initial_categories_list)
