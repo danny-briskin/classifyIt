@@ -33,13 +33,16 @@ def run_classification():
                                'What happens when test automation goes wrong?'
         ,
                                'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
-    load_categories(initial_categories_list)
+    format_categories(initial_categories_list)
+    load_categories()
     process_probabilities(initial_categories_list)
 
 
 class PageObject:
     def __init__(self, p_driver):
         self.driver = p_driver
+        self.text_results = []
+        self.text_results_string = ''
 
     def open_page(self, url):
         logging.info("Opening ... " + url)
@@ -96,12 +99,12 @@ class PageObject:
                 pass
         clean_folder(BASE_DIR + '/tmpImagesFolder/')
         # TODO all!!
-        for image_element in all_images[:2]:
+        for image_element in all_images:
             image_url = get_image_url_from_attributes(image_element)
             first_pos = image_url.rfind("/")
             last_pos = len(image_url)
             image_file_name = image_url[first_pos + 1:last_pos]
-            logging.info('Processing [' + image_url + ']')
+            logging.info('Downloading and processing [' + image_url + ']')
             request = requests.get(image_url, allow_redirects=True)
             image_file_name_full = BASE_DIR + '/tmpImagesFolder/' + image_file_name
             open(image_file_name_full, 'wb').write(request.content)
@@ -111,26 +114,33 @@ class PageObject:
         # find all downloaded images
         list_of_images = find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.webp')
         list_of_images.extend(find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.png'))
-        logging.info('Start to classify...')
+        logging.info('Loading model...')
+        init()
         load_model()
+        logging.info('Searching for text on page....')
+        self.find_all_text()
+        logging.info('Prepare text.....' + ' found ' + str(
+            len(self.text_results_string)) + ' characters of text')
+        initial_categories_list = [self.text_results_string]
+        format_categories(initial_categories_list, 45)
+
+        logging.info('Starting to classify.....')
         for file_image in list_of_images:
             file_image_str = str(file_image)
-            logging.info(' Classification : ' + file_image_str)
+            logging.info(' Classifying image file [file://' + file_image_str + ']')
             load_image(file_image_str)
-            initial_categories_list = ['Test Automation', 'We are a Test Automation Leader',
-                                       'What happens when test automation goes wrong?'
-                ,
-                                       'QA Consultants is at the forefront of test automation engineering techniques, technologies, and methodologies with our test automation services. We partner with clients across various industries to drive their automation innovation and QA optimization. Our expertise spans all test automation platforms and we have a vast knowledge base of best practices which we leverage for our clients. spans all test automation platforms and we have a  .']
-            load_categories(initial_categories_list)
+            load_categories()
             process_probabilities(initial_categories_list)
+            clean()
 
     def find_all_text(self):
-        text_results = set()
         # TODO consider remove img tags from the search
         all_texts = self.driver.find_elements_by_xpath(
-            "//div[contains(@class,'entry-content')]/descendant::*[not(contains(@style,'display: none')) and not(contains(@style,'displayed:false'))]")
+            "//div[contains(@class,'entry-content')]/descendant::*[not(contains(@style,'display: "
+            "none')) and not(contains(@style,'displayed:false'))]")
         for text_item in all_texts:
             if text_item.text != "":
-                text_results.add(text_item.text)
-        text_results_string = ' '.join(text_results)
-        logging.info(text_results_string)
+                self.text_results.append(text_item.text)
+        self.text_results_string = ' '.join(self.text_results)
+        logging.info('Found web text : [' + self.text_results_string[:30] + '...'
+                     + self.text_results_string[-20:] + ']')

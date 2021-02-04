@@ -17,10 +17,10 @@ Feature: Images validation
       | PAGE           |
 #      | industries/healthcare/ |
 #      | old-home-page/         |
-#      | about-us/careers/      |
+      | careers/      |
 #      | category/blog/ |
 #|                /|
-  |                solutions-and-services/test-automation/|
+#  |                solutions-and-services/test-automation/|
 
 
 #    Scenario: Teardown

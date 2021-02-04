@@ -1,49 +1,66 @@
-import csv
 import logging
-
 import torch
-import pandas as pd
 from PIL import Image
-from numpy import loadtxt
-
 from com.qaconsultants.classifyit.clip_processing import module_clip
 
-global image, device, model, preprocess, probs
-
-split_categories_numbers = []
-related_categories_dict = {}
-real_cat_probs = []
+global image, device, model, preprocess, probs, text, related_categories_dict, split_categories_numbers
 
 
-def splitter(n, s):
-    pieces = s.split()
-    return list((" ".join(pieces[i:i + n]) for i in range(0, len(pieces), n)))
+def splitter(number_of_chunks, string_to_split):
+    pieces = string_to_split.split()
+    return list(
+        (" ".join(pieces[i:i + number_of_chunks]) for i in range(0, len(pieces), number_of_chunks)))
 
 
-def format_categories(_initial_categories_list, split_number=60):
+def format_categories(_initial_categories_list, split_words_number=60, tokenizer_number=70):
+    global text, related_categories_dict, split_categories_numbers
     _categories_list = []
-    added_cat_counter = 0
-    for _index, initial_category in enumerate(_initial_categories_list):
-        if module_clip.tokenize_attempt(initial_category) >= split_number:
-            split_list = splitter(split_number - 1, initial_category)
-            _categories_list.extend(split_list)
-            split_length = len(split_list)
-            if split_length > 1:
-                split_categories_numbers.append(_index)
-                related_categories_dict[_index] = list(
-                    [x for x in
-                     range(_index + added_cat_counter, _index + added_cat_counter + split_length)])
-                added_cat_counter += split_length - 1
-            else:
-                related_categories_dict[_index] = [_index + added_cat_counter]
-        else:
-            _categories_list.append(initial_category)
-            related_categories_dict[_index] = [_index + added_cat_counter]
+    split_categories_list = []
+    logging.info('Text(s) list length [' + str(len(_initial_categories_list)) + ']')
+    logging.info('Splitting initial text by [' + str(split_words_number) + '] words')
 
-    return _categories_list
+    # preliminary split by words, to not overflow tokenize_attempt
+    added_cat_counter = 0
+    for _p_index, _p_initial_category in enumerate(_initial_categories_list):
+        _p_split_list = splitter(split_words_number - 1, _p_initial_category)
+        split_categories_list.extend(_p_split_list)
+        split_length = len(_p_split_list)
+        if split_length > 1:
+            split_categories_numbers.append(_p_index)
+            related_categories_dict[_p_index] = list(
+                [x for x in
+                 range(_p_index + added_cat_counter, _p_index + added_cat_counter + split_length)])
+            added_cat_counter += split_length - 1
+        else:
+            related_categories_dict[_p_index] = [_p_index + added_cat_counter]
+
+        logging.info('Chunking text again if some part of its [' + str(len(split_categories_list))
+                     + '] preliminary chunks is not fit by tokenizers\' limit of ['
+                     + str(tokenizer_number) + ']')
+
+        for _index, initial_category in enumerate(split_categories_list):
+            if module_clip.tokenize_attempt(initial_category) >= tokenizer_number:
+                split_list = splitter(split_words_number - 1, initial_category)
+                _categories_list.extend(split_list)
+                split_length = len(split_list)
+                if split_length > 1:
+                    split_categories_numbers.append(_p_index)
+                    related_categories_dict[_p_index].extend(list(
+                        [x for x in
+                         range(_index + added_cat_counter,
+                               _p_index + added_cat_counter + split_length)]))
+                    added_cat_counter += split_length - 1
+                else:
+                    related_categories_dict[_p_index].extend([_index + added_cat_counter])
+            else:
+                _categories_list.append(initial_category)
+
+    logging.info('Text split by [' + str(len(_categories_list)) + '] chunks')
+    text = module_clip.tokenize(_categories_list).to(device)
 
 
 def get_replacement_category_index(current_index):
+    global related_categories_dict
     for key, value in related_categories_dict.items():
         for value_item in value:
             if value_item == current_index:
@@ -52,6 +69,11 @@ def get_replacement_category_index(current_index):
 
 
 def group_list(lst):
+    """
+    Maximum probability
+    :param lst:
+    :return:
+    """
     tup = {i: 0 for i, v in lst}
     for key, value in lst:
         if value >= tup[key]:
@@ -60,8 +82,14 @@ def group_list(lst):
     return list(map(tuple, tup.items()))
 
 
+def init():
+    global split_categories_numbers
+    split_categories_numbers = []
+
+
 def load_model():
-    global device, model, preprocess
+    global device, model, preprocess, related_categories_dict
+    related_categories_dict = {}
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = module_clip.load("ViT-B/32", device=device)
 
@@ -71,11 +99,21 @@ def load_image(image_path):
     image = preprocess(Image.open(image_path)).unsqueeze(0).to(device)
 
 
-def load_categories(initial_categories_list, split_words_number=60):
-    global image, device, probs
-    categories_list = format_categories(initial_categories_list, split_words_number)
+def clean():
+    global image, probs
+    try:
+        del image
+    except NameError:
+        pass
+    try:
+        del probs
+    except NameError:
+        pass
+    init()
 
-    text = module_clip.tokenize(categories_list).to(device)
+
+def load_categories():
+    global image, device, probs, text
 
     with torch.no_grad():
         image_features = model.encode_image(image)
@@ -87,14 +125,15 @@ def load_categories(initial_categories_list, split_words_number=60):
 
 def process_probabilities(initial_categories_list):
     global probs
+    real_cat_probs = []
     for index in range(len(probs[0])):
         replacement_category_index = get_replacement_category_index(index)
         real_cat_probs.append((replacement_category_index, probs[0][index]))
-
     res = group_list(real_cat_probs)
 
     for index in range(len(res)):
-        log_str="{:<26}".format(initial_categories_list[index]) + " : " + "{:.2%}".format(
-            res[index][1])
-        # print(log_str)
+        log_str = "{:<26}".format(
+            initial_categories_list[index][:40].replace("\n", "") + ' <...> '
+            + initial_categories_list[index][-20:].replace("\n", "")) + " : " + "{:.2%}" \
+                      .format(res[index][1])
         logging.info(log_str)
