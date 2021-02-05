@@ -2,10 +2,13 @@ import logging
 import os
 import shutil
 import socket
+from typing import List
+
 import requests
 
 import http.client
 
+import typing
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -15,6 +18,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from com.qaconsultants.classifyit.clip_processing.clip_image_text_processing import *
+from com.qaconsultants.classifyit.clip_processing.clip_image_text_processor import \
+    ClipImageTextProcessor
 from com.qaconsultants.classifyit.utils.file_utilities import clean_folder, find_images_in_folder
 from com.qaconsultants.classifyit.utils.html_utilities import *
 from com.qaconsultants.classifyit.utils.images_utilities import convert_svg_to_png
@@ -36,6 +41,22 @@ def run_classification():
     format_categories(initial_categories_list)
     load_categories()
     process_probabilities(initial_categories_list)
+
+
+def print_probabilities(initial_texts_list: List[str],
+                        preprocessed_probabilities: typing.List[
+                            typing.Tuple[int, float]]) -> None:
+    """
+    Prints probability per initial text
+    :param preprocessed_probabilities: preprocessed_probabilities [(1,0.34),(2,0.78)]
+    :param initial_texts_list: initial texts
+    """
+    for index in range(len(preprocessed_probabilities)):
+        log_str = "{:<26}".format(
+            initial_texts_list[index][:40].replace("\n", "") + ' <...> '
+            + initial_texts_list[index][-20:].replace("\n", "")) + " : " + "{:.2%}" \
+                      .format(preprocessed_probabilities[index][1])
+        logging.info(log_str)
 
 
 class PageObject:
@@ -115,23 +136,37 @@ class PageObject:
         list_of_images = find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.webp')
         list_of_images.extend(find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.png'))
         logging.info('Loading model...')
-        init()
-        load_model()
+
+        clip_image_text_processor = ClipImageTextProcessor()
+        clip_image_text_processor.load_model()
+
+        # init()
+        # load_model()
         logging.info('Searching for text on page....')
         self.find_all_text()
         logging.info('Prepare text.....' + ' found ' + str(
             len(self.text_results_string)) + ' characters of text')
         initial_categories_list = [self.text_results_string]
-        format_categories(initial_categories_list, 45)
+
+        clip_image_text_processor.format_texts(initial_categories_list, 45)
+        # format_categories(initial_categories_list, 45)
 
         logging.info('Starting to classify.....')
         for file_image in list_of_images:
             file_image_str = str(file_image)
             logging.info(' Classifying image file [file://' + file_image_str + ']')
-            load_image(file_image_str)
-            load_categories()
-            process_probabilities(initial_categories_list)
-            clean()
+
+            clip_image_text_processor.image_holder.set_image(file_image_str)
+
+            # load_image(file_image_str)
+            clip_image_text_processor.calculate_probabilities()
+            # load_categories()
+            preprocessed_probabilities = clip_image_text_processor \
+                .preprocess_probabilities(clip_image_text_processor.image_holder.probabilities)
+            print_probabilities(initial_categories_list, preprocessed_probabilities)
+            # process_probabilities(initial_categories_list)
+            # clean()
+            clip_image_text_processor.reset_split_categories_numbers()
 
     def find_all_text(self):
         # TODO consider remove img tags from the search

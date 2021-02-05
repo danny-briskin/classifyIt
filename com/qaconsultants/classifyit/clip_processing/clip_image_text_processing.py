@@ -2,16 +2,12 @@ import logging
 import torch
 from PIL import Image
 from com.qaconsultants.classifyit.clip_processing import module_clip
+from com.qaconsultants.classifyit.utils.string_utilities import spring_splitter_by_chunks, \
+    select_maximum_value_in_list_of_tuples
 
 global image, device, model, preprocess, probs, text, related_categories_dict, split_categories_numbers
 
-
-def splitter(number_of_chunks, string_to_split):
-    pieces = string_to_split.split()
-    return list(
-        (" ".join(pieces[i:i + number_of_chunks]) for i in range(0, len(pieces), number_of_chunks)))
-
-
+# TODO remove the file !
 def format_categories(_initial_categories_list, split_words_number=60, tokenizer_number=70):
     global text, related_categories_dict, split_categories_numbers
     _categories_list = []
@@ -22,7 +18,7 @@ def format_categories(_initial_categories_list, split_words_number=60, tokenizer
     # preliminary split by words, to not overflow tokenize_attempt
     added_cat_counter = 0
     for _p_index, _p_initial_category in enumerate(_initial_categories_list):
-        _p_split_list = splitter(split_words_number - 1, _p_initial_category)
+        _p_split_list = spring_splitter_by_chunks(split_words_number - 1, _p_initial_category)
         split_categories_list.extend(_p_split_list)
         split_length = len(_p_split_list)
         if split_length > 1:
@@ -40,7 +36,7 @@ def format_categories(_initial_categories_list, split_words_number=60, tokenizer
 
         for _index, initial_category in enumerate(split_categories_list):
             if module_clip.tokenize_attempt(initial_category) >= tokenizer_number:
-                split_list = splitter(split_words_number - 1, initial_category)
+                split_list = spring_splitter_by_chunks(split_words_number - 1, initial_category)
                 _categories_list.extend(split_list)
                 split_length = len(split_list)
                 if split_length > 1:
@@ -68,18 +64,7 @@ def get_replacement_category_index(current_index):
     return current_index
 
 
-def group_list(lst):
-    """
-    Maximum probability
-    :param lst:
-    :return:
-    """
-    tup = {i: 0 for i, v in lst}
-    for key, value in lst:
-        if value >= tup[key]:
-            tup[key] = value
-        # using map
-    return list(map(tuple, tup.items()))
+
 
 
 def init():
@@ -129,7 +114,7 @@ def process_probabilities(initial_categories_list):
     for index in range(len(probs[0])):
         replacement_category_index = get_replacement_category_index(index)
         real_cat_probs.append((replacement_category_index, probs[0][index]))
-    res = group_list(real_cat_probs)
+    res = select_maximum_value_in_list_of_tuples(real_cat_probs)
 
     for index in range(len(res)):
         log_str = "{:<26}".format(
