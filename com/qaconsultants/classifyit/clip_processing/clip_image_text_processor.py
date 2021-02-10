@@ -109,27 +109,27 @@ class ClipImageTextProcessor:
             else:
                 self._related_categories_dict[_p_index] = [_p_index + added_cat_counter]
 
-            logging.info(
-                'Chunking text again if some part of its ['
-                + str(len(split_categories_list))
-                + '] preliminary chunks is not fit by tokenizers\' limit of ['
-                + str(tokenizer_number) + ']')
-            for _index, initial_category in enumerate(split_categories_list):
-                if module_clip.tokenize_attempt(initial_category) >= tokenizer_number:
-                    split_list = spring_splitter_by_chunks(split_words_number - 1, initial_category)
-                    _categories_list.extend(split_list)
-                    split_length = len(split_list)
-                    if split_length > 1:
-                        self._split_categories_numbers.append(_p_index)
-                        self._related_categories_dict[_p_index].extend(list(
-                            [x for x in
-                             range(_index + added_cat_counter,
-                                   _p_index + added_cat_counter + split_length)]))
-                        added_cat_counter += split_length - 1
-                    else:
-                        self._related_categories_dict[_p_index].extend([_index + added_cat_counter])
+        logging.info(
+            'Chunking text again if some part of its ['
+            + str(len(split_categories_list))
+            + '] preliminary chunks is not fit by tokenizers\' limit of ['
+            + str(tokenizer_number) + ']')
+        for _index, initial_category in enumerate(split_categories_list):
+            if module_clip.tokenize_attempt(initial_category) >= tokenizer_number:
+                split_list = spring_splitter_by_chunks(split_words_number - 1, initial_category)
+                _categories_list.extend(split_list)
+                split_length = len(split_list)
+                if split_length > 1:
+                    self._split_categories_numbers.append(_index)
+                    self._related_categories_dict[_index].extend(list(
+                        [x for x in
+                         range(_index + added_cat_counter,
+                               _index + added_cat_counter + split_length)]))
+                    added_cat_counter += split_length - 1
                 else:
-                    _categories_list.append(initial_category)
+                    self._related_categories_dict[_index].extend([_index + added_cat_counter])
+            else:
+                _categories_list.append(initial_category)
 
         logging.info('Text split by [' + str(len(_categories_list)) + '] chunks')
         self._text = module_clip.tokenize(_categories_list).to(self._device)

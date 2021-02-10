@@ -1,9 +1,6 @@
 import logging
-from pathlib import Path
-
 import cairosvg
 import requests
-import http.client
 from com.qaconsultants.classifyit.utils.file_utilities import replace_text_in_file
 
 
