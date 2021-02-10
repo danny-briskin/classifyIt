@@ -10,7 +10,14 @@ from com.qaconsultants.classifyit.request_data import RequestData
 from com.qaconsultants.classifyit.utils.file_utilities import find_images_in_folder, clean_folder
 from com.qaconsultants.classifyit.utils.images_utilities import download_image
 
-global clip_image_text_processor
+global clip_image_text_processor, dummy_categories
+
+dummy_categories = [
+    "Orange boy is riding a blue horse and talking to a squirrel",
+    "President of the Moon has banned meat from restaurant menu",
+    "Seahorses don't like when racoons are eating schnitzel on bone",
+    "A cowboy is passing through prairie",
+    "An abstract picture with something big"]
 
 BASE_DIR = os.path.dirname(os.getcwd() + '/flaskProject')
 
@@ -46,7 +53,7 @@ def process(app: Flask, initial_categories_list: typing.List[str]):
     app.logger.info('%s', 'Searching for text on page....')
     app.logger.info('%s', 'Prepare text.....' + ' found ' + str(
         len(initial_categories_list)) + ' texts')
-    # initial_categories_list = [text_to_classify]
+    initial_categories_list = add_dummy_categories(initial_categories_list)
 
     clip_image_text_processor.format_texts(initial_categories_list, 45)
     # format_categories(initial_categories_list, 45)
@@ -92,12 +99,15 @@ def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
     :param preprocessed_probabilities: preprocessed_probabilities [(1,0.34),(2,0.78)]
     :param initial_texts_list: initial texts
     """
+    global dummy_categories
+
     json_list = {}
     for index in range(len(preprocessed_probabilities)):
-        json_list[
-            initial_texts_list[index][:40].replace("\n", "") + ' <...> '
-            + initial_texts_list[index][-20:].replace("\n", "")] = \
-            float(preprocessed_probabilities[index][1])
+        if initial_texts_list[index] not in dummy_categories:
+            json_list[
+                initial_texts_list[index][:40].replace("\n", "") + ' <...> '
+                + initial_texts_list[index][-20:].replace("\n", "")] = \
+                float(preprocessed_probabilities[index][1])
 
         app.logger.info('%s', str(json_list))
 
@@ -117,3 +127,15 @@ def load_clip_model(app: Flask):
     app.logger.info('%s', 'Loading model...')
     clip_image_text_processor = ClipImageTextProcessor()
     clip_image_text_processor.load_model()
+
+
+def add_dummy_categories(initial_texts_list: typing.List[str]) -> typing.List[str]:
+    initial_texts_list.extend(dummy_categories)
+    return initial_texts_list
+
+
+def remove_dummy_categories(initial_texts_list: typing.List[str]) -> typing.List[str]:
+    global dummy_categories
+    for cat in dummy_categories:
+        initial_texts_list.remove(cat)
+    return initial_texts_list
