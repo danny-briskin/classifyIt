@@ -22,7 +22,7 @@ from com.qaconsultants.classifyit.clip_processing.clip_image_text_processor impo
     ClipImageTextProcessor
 from com.qaconsultants.classifyit.utils.file_utilities import clean_folder, find_images_in_folder
 from com.qaconsultants.classifyit.utils.html_utilities import *
-from com.qaconsultants.classifyit.utils.images_utilities import convert_svg_to_png
+from com.qaconsultants.classifyit.utils.images_utilities import convert_svg_to_png, download_image
 
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
@@ -119,18 +119,10 @@ class PageObject:
             except NoSuchElementException:
                 pass
         clean_folder(BASE_DIR + '/tmpImagesFolder/')
-        # TODO all!!
+
         for image_element in all_images:
             image_url = get_image_url_from_attributes(image_element)
-            first_pos = image_url.rfind("/")
-            last_pos = len(image_url)
-            image_file_name = image_url[first_pos + 1:last_pos]
-            logging.info('Downloading and processing [' + image_url + ']')
-            request = requests.get(image_url, allow_redirects=True)
-            image_file_name_full = BASE_DIR + '/tmpImagesFolder/' + image_file_name
-            open(image_file_name_full, 'wb').write(request.content)
-            if image_url.endswith('.svg'):
-                convert_svg_to_png(image_file_name, BASE_DIR + '/tmpImagesFolder/')
+            download_image(image_url, BASE_DIR + '/tmpImagesFolder/')
 
         # find all downloaded images
         list_of_images = find_images_in_folder(BASE_DIR + '/tmpImagesFolder/', '*.webp')
