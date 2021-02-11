@@ -8,7 +8,17 @@ app = Flask(__name__)
 @app.route('/classifyit', methods=['GET', 'POST'])
 def text():
     if request.method == 'GET':
-        return jsonify({'message': 'Hello world!'})
+        str = [{'usage': 'Please use the next request to get the values you are looking for'},
+               {'request': 'POST /classifyit HTTP/1.1 '
+                           + 'Host: 127.0.0.1:5000 '
+                           + 'Content-Type: application/json '},
+               {'body': "{ 'image_url' : 'your-url/image.jpg', "
+                        + " 'image_texts' : ["
+                        + "'text1', 'text2', 'text3', 'text4']"},
+               {'response body': "{ 'text1' : 0.0101 , 'text2' : 0.9812,"
+                                 + "'text3' : 0.0001, 'text4' : 0.0001}"}]
+        return jsonify(str)
+        # return jsonify({'message': 'Hello world!'})
     if request.method == 'POST':
         req = request.get_json()
         response_body = process_post_request(app, RequestData(req['image_url'], req['image_texts']))

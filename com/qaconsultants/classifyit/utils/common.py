@@ -68,26 +68,8 @@ def process(app: Flask, initial_categories_list: typing.List[str]):
         clip_image_text_processor.calculate_probabilities()
         preprocessed_probabilities = clip_image_text_processor \
             .preprocess_probabilities(clip_image_text_processor.image_holder.probabilities)
-        print_probabilities(app, initial_categories_list, preprocessed_probabilities)
         clip_image_text_processor.reset_split_categories_numbers()
         return json_probabilities(app, initial_categories_list, preprocessed_probabilities)
-
-
-def print_probabilities(app: Flask, initial_texts_list: typing.List[str],
-                        preprocessed_probabilities: typing.List[
-                            typing.Tuple[int, float]]) -> None:
-    """
-    Prints probability per initial text
-    :param app:
-    :param preprocessed_probabilities: preprocessed_probabilities [(1,0.34),(2,0.78)]
-    :param initial_texts_list: initial texts
-    """
-    for index in range(len(preprocessed_probabilities)):
-        log_str = "{:<26}".format(
-            initial_texts_list[index][:40].replace("\n", "") + ' <...> '
-            + initial_texts_list[index][-20:].replace("\n", "")) + " : " + "{:.2%}" \
-                      .format(preprocessed_probabilities[index][1])
-        app.logger.info('%s', log_str)
 
 
 def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
@@ -104,12 +86,13 @@ def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
     json_list = {}
     for index in range(len(preprocessed_probabilities)):
         if initial_texts_list[index] not in dummy_categories:
-            json_list[
-                initial_texts_list[index][:40].replace("\n", "") + ' <...> '
-                + initial_texts_list[index][-20:].replace("\n", "")] = \
-                float(preprocessed_probabilities[index][1])
+            initial_text = initial_texts_list[index].replace("\n", " ")
+            if len(initial_text) > 50:
+                initial_text = initial_text[:20] + ' <...> ' + initial_text[-20:]
 
-        app.logger.info('%s', str(json_list))
+            json_list[initial_text] = float(preprocessed_probabilities[index][1])
+
+    app.logger.info('%s', str(json_list))
 
     return json_list
 
