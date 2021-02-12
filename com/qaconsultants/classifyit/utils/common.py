@@ -83,14 +83,16 @@ def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
     """
     global dummy_categories
 
-    json_list = {}
+    json_list = []
     for index in range(len(preprocessed_probabilities)):
         if initial_texts_list[index] not in dummy_categories:
+            json_item = {}
             initial_text = initial_texts_list[index].replace("\n", " ")
             if len(initial_text) > 50:
                 initial_text = initial_text[:20] + ' <...> ' + initial_text[-20:]
-
-            json_list[initial_text] = float(preprocessed_probabilities[index][1])
+            json_item['text'] = initial_text
+            json_item['probability'] = float(preprocessed_probabilities[index][1])
+            json_list.append(json_item)
 
     app.logger.info('%s', str(json_list))
 
