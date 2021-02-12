@@ -1,29 +1,27 @@
-# README #
+# ClassifyIT #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+* A service for Classification of Images and Texts
+* 0.1
 
-### What is this repository for? ###
+## Installation ##
+* Docker image
+TODO
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## Usage ##
+TODO
 
-### How do I get set up? ###
+## API ##
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+TODO 
 
-### Contribution guidelines ###
+## Credits ##
 
-* Writing tests
-* Code review
-* Other guidelines
+* Danny Briskin (dbriskin@qaconsultants.com)
 
-### Who do I talk to? ###
+## License ##
+TODO
 
-* Repo owner or admin
-* Other community or team contact
+## 3rd party licenses ##
+|Component|License|Link|
+|---------|-------|----|
+|CLIP|[MIT](https://opensource.org/licenses/MIT)|[License](https://github.com/openai/CLIP/blob/main/LICENSE)|

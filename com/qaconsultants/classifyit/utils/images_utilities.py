@@ -29,10 +29,17 @@ def download_image(image_url: str, download_directory: str) -> None:
     """
     first_pos = image_url.rfind("/")
     last_pos = len(image_url)
-    image_file_name = image_url[first_pos + 1:last_pos]
+    image_file_name_with_ext = image_url[first_pos + 1:last_pos]
+    first_pos = image_file_name_with_ext.rfind(".")
+    image_file_name = image_file_name_with_ext[0:first_pos]
+    image_file_ext = image_file_name_with_ext[first_pos:]
+
+    if len(image_file_name) > 30:
+        image_file_name = image_file_name[:30]
+        image_file_name_with_ext = image_file_name + image_file_ext
     logging.info('Downloading and processing [' + image_url + ']')
     request = requests.get(image_url, allow_redirects=True)
-    image_file_name_full = download_directory + image_file_name
+    image_file_name_full = download_directory + image_file_name_with_ext
     open(image_file_name_full, 'wb').write(request.content)
     if image_url.endswith('.svg'):
         convert_svg_to_png(image_file_name, download_directory)

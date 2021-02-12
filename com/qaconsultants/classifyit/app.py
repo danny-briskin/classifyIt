@@ -15,10 +15,12 @@ def text():
                {'body': "{ 'image_url' : 'your-url/image.jpg', "
                         + " 'image_texts' : ["
                         + "'text1', 'text2', 'text3', 'text4']"},
-               {'response body': "{ 'text1' : 0.0101 , 'text2' : 0.9812,"
-                                 + "'text3' : 0.0001, 'text4' : 0.0001}"}]
+               {'response body': "[{ 'probability' : 0.0101, 'text':'text2' } ,"
+                                 + "{ 'probability' : 0.2101, 'text':'text1' } ,"
+                                 + " { 'probability' : 0.0011, 'text':'text3' } ,"
+                                 + "{ 'probability' : 0.6202, 'text':'text3' } "
+                                 + " ]"}]
         return jsonify(str)
-        # return jsonify({'message': 'Hello world!'})
     if request.method == 'POST':
         req = request.get_json()
         response_body = process_post_request(app, RequestData(req['image_url'], req['image_texts']))

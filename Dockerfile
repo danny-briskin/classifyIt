@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.8
 
 LABEL authors="Danny Briskin (dbriskin@qaconsultants.com)"
 
@@ -7,9 +7,9 @@ COPY Pipfile* /tmp/
 RUN cd /tmp && pipenv lock --keep-outdated --requirements > requirements.txt
 RUN pip install -r /tmp/requirements.txt
 RUN pip install waitress
-COPY . /tmp/myapp
+COPY . /tmp/classifyit
 
-WORKDIR /tmp/myapp
+WORKDIR /tmp/classifyit
 
 EXPOSE 5000
 
