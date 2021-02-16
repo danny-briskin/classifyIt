@@ -13,7 +13,11 @@ tqdm= "*"
 ftfy = "*"
 regex = "*"
 pandas = "*"
-
+apispec = "*"
+flask_swagger_ui = "*"
+apispec_webframeworks = "*"
+marshmallow = "*"
+waitress = "*"
 
 [dev-packages]
 
