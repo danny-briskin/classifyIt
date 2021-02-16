@@ -59,7 +59,7 @@ def get_apispec(app):
     """
     spec = APISpec(
         title="ClassifyIT",
-        version="0.0.1",
+        version="0.0.3",
         openapi_version="3.0.2",
         plugins=[FlaskPlugin(), MarshmallowPlugin()],
     )
