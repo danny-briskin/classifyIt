@@ -9,6 +9,7 @@ from com.qaconsultants.classifyit.clip_processing.clip_image_text_processor impo
 from com.qaconsultants.classifyit.request_data import RequestData
 from com.qaconsultants.classifyit.utils.file_utilities import find_images_in_folder, clean_folder
 from com.qaconsultants.classifyit.utils.images_utilities import download_image
+from com.qaconsultants.classifyit.utils.rest_response import RestResponse
 
 global clip_image_text_processor, dummy_categories
 
@@ -47,7 +48,7 @@ def get_list_of_images() -> list:
     return _list_of_images
 
 
-def process(app: Flask, initial_categories_list: typing.List[str]):
+def process(app: Flask, initial_categories_list: typing.List[str]) -> RestResponse:
     list_of_images = get_list_of_images()
 
     app.logger.info('%s', 'Searching for text on page....')
@@ -56,25 +57,31 @@ def process(app: Flask, initial_categories_list: typing.List[str]):
     initial_categories_list = add_dummy_categories(initial_categories_list)
 
     clip_image_text_processor.format_texts(initial_categories_list, 45)
-    # format_categories(initial_categories_list, 45)
 
     app.logger.info('%s', 'Starting to classify.....')
+    rest_response = RestResponse()
     for file_image in list_of_images:
         file_image_str = str(file_image)
         app.logger.info('%s', ' Classifying image file [file://' + file_image_str + ']')
 
-        clip_image_text_processor.image_holder.set_image(file_image_str)
-
+        image_set_result = clip_image_text_processor.image_holder.set_image(file_image_str)
+        if image_set_result != 200:
+            rest_response.set_status_and_body(image_set_result
+                                              , [{'error': 'Given image could not be processed'}])
+            return rest_response
         clip_image_text_processor.calculate_probabilities()
         preprocessed_probabilities = clip_image_text_processor \
             .preprocess_probabilities(clip_image_text_processor.image_holder.probabilities)
         clip_image_text_processor.reset_split_categories_numbers()
-        return json_probabilities(app, initial_categories_list, preprocessed_probabilities)
+        rest_response.set_status_and_body(200,
+                                          json_probabilities(app, initial_categories_list,
+                                                             preprocessed_probabilities))
+        return rest_response
 
 
 def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
                        preprocessed_probabilities: typing.List[
-                           typing.Tuple[int, float]]):
+                           typing.Tuple[int, float]]) -> typing.List[typing.Dict]:
     """
     Prints probability per initial text
     :param app:
@@ -99,7 +106,7 @@ def json_probabilities(app: Flask, initial_texts_list: typing.List[str],
     return json_list
 
 
-def process_post_request(app: Flask, request_data: RequestData):
+def process_post_request(app: Flask, request_data: RequestData) -> RestResponse:
     app.logger.info('URL [%s], \n Text [%s]', request_data.image_url,
                     str(request_data.image_texts))
     clean_folder(BASE_DIR + '/tmpImagesFolder/')

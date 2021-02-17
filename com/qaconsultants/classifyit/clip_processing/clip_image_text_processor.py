@@ -3,7 +3,7 @@ from typing import List
 
 import torch
 import typing
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from com.qaconsultants.classifyit.clip_processing import module_clip
 from com.qaconsultants.classifyit.utils.string_utilities import spring_splitter_by_chunks, \
@@ -71,7 +71,16 @@ class ClipImageTextProcessor:
         :param image_path: path to the image
         :return image
         """
-        return self._preprocess(Image.open(image_path)).unsqueeze(0).to(self._device)
+        try:
+            _loaded_image = Image.open(image_path)
+        except UnidentifiedImageError as e:
+            logging.exception('Error at %s', 'image', exc_info=e)
+            # return None
+        except Exception as e:
+            logging.error('Error at %s', 'division', exc_info=e)
+            raise Exception("Sorry, no numbers below zero")
+        else:
+            return self._preprocess(_loaded_image).unsqueeze(0).to(self._device)
 
     def reset_split_categories_numbers(self):
         self._split_categories_numbers = []
@@ -159,5 +168,9 @@ class ClipImageTextProcessor:
             self.image = None
             self.probabilities = None
 
-        def set_image(self, image_path: str):
+        def set_image(self, image_path: str) -> int:
             self.image = self.outer.load_image(image_path)
+            if self.image is None:
+                return 500
+            else:
+                return 200

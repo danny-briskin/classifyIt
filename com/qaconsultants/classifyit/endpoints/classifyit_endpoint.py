@@ -51,15 +51,15 @@ def classifyit_post():
         req = request.get_json()
         if req.get('image_url') is None:
             return current_app.response_class(response=json.dumps(
-                {'error': 'There was no "image_url" parameter'}),
+                {'error': 'image_url - missing parameter'}),
                 status=400, mimetype='application/json')
         if req.get('image_texts') is None:
             return current_app.response_class(response=json.dumps(
-                {'error': 'There was no "image_texts" parameter'}),
+                {'error': 'image_texts - missing parameter'}),
                 status=400, mimetype='application/json')
-        response_body = process_post_request(current_app,
+        response = process_post_request(current_app,
                                              RequestData(req['image_url'], req['image_texts']))
-        if response_body and response_body != '':
-            return make_response(jsonify(response_body), 200)
+        if response:
+            return make_response(jsonify(response.body), response.status)
         else:
-            return make_response(jsonify({"message": "Sorry"}), 500)
+            return make_response(jsonify({"message": "An internal error has happened"}), 500)
