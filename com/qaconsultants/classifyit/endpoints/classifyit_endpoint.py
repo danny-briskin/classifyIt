@@ -31,7 +31,18 @@ def classifyit_post():
             application/json:
               schema: OutputSchema
         '400':
-          description: No image URL or image texts
+          description: Image URL is not a valid URL or cannot be reached;
+                        image texts is not a list of strings.
+          content:
+            application/json:
+              schema: ErrorSchema
+        '422':
+          description: Image URL (image_url) or image texts list (image texts) parameter is missing
+          content:
+            application/json:
+              schema: ErrorSchema
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema: ErrorSchema
