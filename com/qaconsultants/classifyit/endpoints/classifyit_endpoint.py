@@ -51,6 +51,9 @@ def classifyit_post():
      """
     if request.method == 'POST':
         req = request.get_json()
+        if req is None:
+            logging.error('Request body is missing')
+            raise MissingParameter('Request body')
         if req.get('image_url') is None:
             logging.error('Parameter image_url is missing')
             raise MissingParameter('image_url')
