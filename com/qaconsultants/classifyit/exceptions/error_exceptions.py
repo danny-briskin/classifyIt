@@ -32,3 +32,8 @@ class MissingParameter(AbstractException):
 class MethodUnsupported(AbstractException):
     status_code = 405
     message_key = 'unsupported method'
+
+
+class ImageException(AbstractException):
+    status_code = 500
+    message_key = 'image processing error'

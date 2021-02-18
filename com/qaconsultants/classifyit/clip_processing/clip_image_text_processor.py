@@ -6,7 +6,8 @@ import typing
 from PIL import Image, UnidentifiedImageError
 
 from com.qaconsultants.classifyit.clip_processing import module_clip
-from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter
+from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter, \
+    ImageException
 from com.qaconsultants.classifyit.utils.string_utilities import spring_splitter_by_chunks, \
     select_maximum_value_in_list_of_tuples
 
@@ -74,12 +75,9 @@ class ClipImageTextProcessor:
         """
         try:
             _loaded_image = Image.open(image_path)
-        except UnidentifiedImageError as e:
-            logging.exception('Error at %s', 'image', exc_info=e)
-            # return None
         except Exception as e:
-            logging.error('Error at %s', 'division', exc_info=e)
-            raise Exception("Sorry, no numbers below zero")
+            logging.exception('Error at %s', image_path, exc_info=e)
+            raise ImageException('Image was not processed correctly')
         else:
             return self._preprocess(_loaded_image).unsqueeze(0).to(self._device)
 
