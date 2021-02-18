@@ -3,7 +3,7 @@ from typing import List
 
 import torch
 import typing
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 
 from com.qaconsultants.classifyit.clip_processing import module_clip
 from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter, \
