@@ -31,3 +31,32 @@ def select_maximum_value_in_list_of_tuples(list_of_tuples: typing.List[Tuple[int
             _tuple[key] = value
             # using map
     return list(map(tuple, _tuple.items()))
+
+
+def is_list_of_strings(lst) -> bool:
+    """
+    Verifies that given parameter is a list of strings
+    :param lst: list
+    :return: True if parameter is list of strings
+    """
+    if lst and isinstance(lst, list):
+        return all(isinstance(elem, str) for elem in lst)
+    else:
+        return False
+
+
+def is_valid_url(url) -> bool:
+    """
+    Validates if given image is an URL
+    :param url: string URL
+    :return: True if given string is an URL
+    """
+    import re
+    regex = re.compile(
+        r'^https?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return url is not None and regex.search(url)

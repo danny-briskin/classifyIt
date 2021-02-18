@@ -6,6 +6,7 @@ import typing
 from PIL import Image
 
 from com.qaconsultants.classifyit.clip_processing import module_clip
+from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter
 from com.qaconsultants.classifyit.utils.string_utilities import spring_splitter_by_chunks, \
     select_maximum_value_in_list_of_tuples
 
@@ -71,7 +72,13 @@ class ClipImageTextProcessor:
         :param image_path: path to the image
         :return image
         """
-        return self._preprocess(Image.open(image_path)).unsqueeze(0).to(self._device)
+        try:
+            _loaded_image = Image.open(image_path)
+        except Exception as e:
+            logging.exception('Error at %s', image_path, exc_info=e)
+            raise InvalidParameter('Given image could not be processed')
+        else:
+            return self._preprocess(_loaded_image).unsqueeze(0).to(self._device)
 
     def reset_split_categories_numbers(self):
         self._split_categories_numbers = []
