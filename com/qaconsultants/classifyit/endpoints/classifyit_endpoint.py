@@ -1,29 +1,20 @@
+import logging
+
+from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter, \
+    MissingParameter, MethodUnsupported
 from com.qaconsultants.classifyit.request_data import RequestData
 from com.qaconsultants.classifyit.utils.common import process_post_request
-from flask import current_app, json
+from flask import current_app
 from flask import request, jsonify, make_response, Blueprint
+
+from com.qaconsultants.classifyit.utils.string_utilities import is_list_of_strings, is_valid_url
+
+HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 blueprint_classifyit = Blueprint(name="classifyit", import_name=__name__)
 
 
-@blueprint_classifyit.route('/classifyit', methods=['GET'])
-def classifyit_get():
-    str = [{'usage': 'Please use the next request to get the values you are looking for'},
-           {'request': 'POST /classifyit HTTP/1.1 '
-                       + 'Host: 127.0.0.1:5000 '
-                       + 'Content-Type: application/json '},
-           {'body': "{ 'image_url' : 'your-url/image.jpg', "
-                    + " 'image_texts' : ["
-                    + "'text1', 'text2', 'text3', 'text4']"},
-           {'response body': "[{ 'probability' : 0.0101, 'text':'text2' } ,"
-                             + "{ 'probability' : 0.2101, 'text':'text1' } ,"
-                             + " { 'probability' : 0.0011, 'text':'text3' } ,"
-                             + "{ 'probability' : 0.6202, 'text':'text3' } "
-                             + " ]"}]
-    return jsonify(str)
-
-
-@blueprint_classifyit.route('/classifyit', methods=['POST'])
+@blueprint_classifyit.route('/classifyit', methods=HTTP_METHODS)
 def classifyit_post():
     """
     ---
@@ -50,16 +41,25 @@ def classifyit_post():
     if request.method == 'POST':
         req = request.get_json()
         if req.get('image_url') is None:
-            return current_app.response_class(response=json.dumps(
-                {'error': 'image_url - missing parameter'}),
-                status=400, mimetype='application/json')
+            logging.error('Parameter image_url is missing')
+            raise MissingParameter('image_url')
         if req.get('image_texts') is None:
-            return current_app.response_class(response=json.dumps(
-                {'error': 'image_texts - missing parameter'}),
-                status=400, mimetype='application/json')
-        response = process_post_request(current_app,
-                                             RequestData(req['image_url'], req['image_texts']))
+            logging.error('Parameter image_texts is missing')
+            raise MissingParameter('image_texts')
+        image_texts = req['image_texts']
+        if not is_list_of_strings(image_texts):
+            logging.error("Parameter 'image_texts' is not a list of strings " + str(image_texts))
+            raise InvalidParameter("Parameter 'image_texts' is not a list of strings")
+        image_url = req['image_url']
+        if not is_valid_url(image_url):
+            logging.error('Given image_url [' + image_url + '] is not a valid URL')
+            raise InvalidParameter('Given image_url [' + image_url + '] is not a valid URL')
+
+        response = process_post_request(current_app, RequestData(image_url, image_texts))
         if response:
             return make_response(jsonify(response.body), response.status)
         else:
             return make_response(jsonify({"message": "An internal error has happened"}), 500)
+    else:
+        logging.warn('Method is unsupported:' + request.method)
+        raise MethodUnsupported(request.method)

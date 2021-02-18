@@ -1,6 +1,7 @@
 import logging
 import cairosvg
 import requests
+from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter
 from com.qaconsultants.classifyit.utils.file_utilities import replace_text_in_file
 
 
@@ -25,7 +26,6 @@ def download_image(image_url: str, download_directory: str) -> None:
     Download image from given URL. If image format is SVG, converts it PNG
     :param image_url: url
     :param download_directory: directory to save images
-    :return:
     """
     first_pos = image_url.rfind("/")
     last_pos = len(image_url)
@@ -38,7 +38,12 @@ def download_image(image_url: str, download_directory: str) -> None:
         image_file_name = image_file_name[:30]
         image_file_name_with_ext = image_file_name + image_file_ext
     logging.info('Downloading and processing [' + image_url + ']')
+
     request = requests.get(image_url, allow_redirects=True)
+    if request.status_code != 200:
+        logging.error('Error downloading image [' + str(request.status_code) + ']')
+        raise InvalidParameter('Image could not be retrieved at [' + image_url + ']',
+                               request.status_code)
     image_file_name_full = download_directory + image_file_name_with_ext
     open(image_file_name_full, 'wb').write(request.content)
     if image_url.endswith('.svg'):

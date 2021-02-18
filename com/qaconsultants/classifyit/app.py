@@ -5,6 +5,7 @@ from flask import Flask, jsonify
 from com.qaconsultants.classifyit.doc.api_specs import get_apispec
 from com.qaconsultants.classifyit.doc.flask_swagger import SWAGGER_URL, swagger_ui_blueprint
 from com.qaconsultants.classifyit.endpoints.classifyit_endpoint import blueprint_classifyit
+from com.qaconsultants.classifyit.exceptions.error_exceptions import AbstractException
 from com.qaconsultants.classifyit.utils.common import load_clip_model
 
 app = Flask(__name__)
@@ -25,6 +26,13 @@ def not_found(error):
 @app.before_first_request
 def load_model():
     load_clip_model(app)
+
+
+@app.errorhandler(AbstractException)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 if __name__ == '__main__':

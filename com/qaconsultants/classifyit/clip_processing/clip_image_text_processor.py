@@ -6,6 +6,7 @@ import typing
 from PIL import Image, UnidentifiedImageError
 
 from com.qaconsultants.classifyit.clip_processing import module_clip
+from com.qaconsultants.classifyit.exceptions.error_exceptions import InvalidParameter
 from com.qaconsultants.classifyit.utils.string_utilities import spring_splitter_by_chunks, \
     select_maximum_value_in_list_of_tuples
 
@@ -168,9 +169,7 @@ class ClipImageTextProcessor:
             self.image = None
             self.probabilities = None
 
-        def set_image(self, image_path: str) -> int:
+        def set_image(self, image_path: str):
             self.image = self.outer.load_image(image_path)
             if self.image is None:
-                return 500
-            else:
-                return 200
+                raise InvalidParameter('Given image could not be processed')

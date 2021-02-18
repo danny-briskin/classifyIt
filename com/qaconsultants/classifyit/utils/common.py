@@ -11,13 +11,13 @@ from com.qaconsultants.classifyit.utils.file_utilities import find_images_in_fol
 from com.qaconsultants.classifyit.utils.images_utilities import download_image
 from com.qaconsultants.classifyit.utils.rest_response import RestResponse
 
-global clip_image_text_processor, dummy_categories
+global clip_image_text_processor
 
 dummy_categories = [
     "Orange boy is riding a blue horse and talking to a squirrel",
     "President of the Moon has banned meat from restaurant menu",
     "Seahorses don't like when racoons are eating schnitzel on bone",
-    "A cowboy is passing through prairie",
+    "A cowboy is riding through prairie",
     "An abstract picture with something big"]
 
 BASE_DIR = os.path.dirname(os.getcwd() + '/flaskProject')
@@ -64,11 +64,8 @@ def process(app: Flask, initial_categories_list: typing.List[str]) -> RestRespon
         file_image_str = str(file_image)
         app.logger.info('%s', ' Classifying image file [file://' + file_image_str + ']')
 
-        image_set_result = clip_image_text_processor.image_holder.set_image(file_image_str)
-        if image_set_result != 200:
-            rest_response.set_status_and_body(image_set_result
-                                              , [{'error': 'Given image could not be processed'}])
-            return rest_response
+        clip_image_text_processor.image_holder.set_image(file_image_str)
+
         clip_image_text_processor.calculate_probabilities()
         preprocessed_probabilities = clip_image_text_processor \
             .preprocess_probabilities(clip_image_text_processor.image_holder.probabilities)
@@ -122,6 +119,7 @@ def load_clip_model(app: Flask):
 
 
 def add_dummy_categories(initial_texts_list: typing.List[str]) -> typing.List[str]:
+    global dummy_categories
     initial_texts_list.extend(dummy_categories)
     return initial_texts_list
 
