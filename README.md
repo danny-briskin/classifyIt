@@ -1,25 +1,32 @@
 # ClassifyIT #
 
 * A service for Classification of Images and Texts
-* 0.1
 
 ## Installation ##
 * Docker image
-TODO
 
 ## Usage ##
-TODO
-
-## API ##
-
-TODO 
+```
+POST /classifyit HTTP/1.1
+Host: <docker_host>:5000
+Content-Type: application/json
+{
+    "image_url": "<image_URL>",
+    "image_texts": [
+        "text 1",
+        "text 2",
+        "text 3",
+        ...
+    ]
+}
+```
 
 ## Credits ##
 
 * Danny Briskin (dbriskin@qaconsultants.com)
 
 ## License ##
-TODO
+[MIT](https://opensource.org/licenses/MIT)
 
 ## 3rd party licenses ##
 |Component|License|Link|
